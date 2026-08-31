@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Verdict Ledger</title>
+
+<!-- Add to Home Screen support (iOS + Android) -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Verdict Ledger">
+<meta name="theme-color" content="#2F4B7C">
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #EEF1F5;
+    --surface: #FFFFFF;
+    --surface-2: #F5F7FA;
+    --border: #DCE1E9;
+    --ink: #1A2130;
+    --ink-muted: #5B6472;
+    --accent: #2F4B7C;
+    --accent-ink: #1D3057;
+    --accent-soft: #E4EAF4;
+    --confirmed: #227A4E;
+    --confirmed-bg: #E1F2E8;
+    --false: #A83A32;
+    --false-bg: #FAE6E4;
+    --mixed: #96690F;
+    --mixed-bg: #FBF0D8;
+    --unverified: #5B6472;
+    --unverified-bg: #EBEDF1;
+    --danger: #A83A32;
+    --shadow: 0 1px 2px rgba(26,33,48,0.04), 0 6px 20px rgba(26,33,48,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10141C; --surface: #171C26; --surface-2: #1D2330; --border: #2B3140;
+      --ink: #E7EAF0; --ink-muted: #9AA3B2; --accent: #8FADDD; --accent-ink: #C4D5F2;
+      --accent-soft: #212B3D; --confirmed: #6BD39B; --confirmed-bg: rgba(107,211,155,0.14);
+      --false: #E6948C; --false-bg: rgba(230,148,140,0.14); --mixed: #E3BD73;
+      --mixed-bg: rgba(227,189,115,0.14); --unverified: #A6AEBD; --unverified-bg: rgba(166,174,189,0.12);
+      --danger: #E6948C;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 24px rgba(0,0,0,0.35);
+    }
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Public Sans', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 96px; }
+
+  .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
+  }
+  h1 {
+    font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 36px;
+    letter-spacing: -0.01em; margin: 6px 0 6px; text-wrap: balance;
+  }
+  .sub { color: var(--ink-muted); font-size: 15px; max-width: 52ch; margin: 0 0 22px; }
+
+  .icon-btn {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--ink-muted); font-size: 18px; flex: 0 0 auto;
+  }
+  .icon-btn:hover { color: var(--ink); }
+
+  .checkbar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px; box-shadow: var(--shadow); margin-bottom: 20px;
+  }
+  .checkbar-row { display: flex; gap: 8px; }
+  .checkbar textarea {
+    flex: 1; resize: none; border: none; background: transparent; color: var(--ink);
+    font-family: 'Public Sans', sans-serif; font-size: 16px; padding: 8px 6px;
+    min-height: 44px; max-height: 140px;
+  }
+  .checkbar textarea:focus { outline: none; }
+  .checkbtn {
+    flex: 0 0 auto; align-self: flex-end; background: var(--accent); color: #fff; border: none;
+    padding: 12px 18px; border-radius: 10px; font-family: inherit; font-weight: 600;
+    font-size: 14.5px; cursor: pointer; white-space: nowrap;
+  }
+  .checkbtn:disabled { opacity: 0.55; cursor: default; }
+  .checkbar-hint { font-size: 12px; color: var(--ink-muted); margin-top: 8px; padding: 0 6px; }
+  .checkbar-hint kbd {
+    font-family: 'IBM Plex Mono', monospace; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 5px; font-size: 11px;
+  }
+
+  .status { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-muted); margin: 10px 2px 0; }
+  .spinner {
+    width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border);
+    border-top-color: var(--accent); animation: spin 0.8s linear infinite; flex: 0 0 auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+  .banner {
+    background: var(--false-bg); color: var(--false); border-radius: 10px; padding: 10px 14px;
+    font-size: 13.5px; margin: 10px 0 0; display: flex; justify-content: space-between; gap: 10px; align-items: flex-start;
+  }
+  .banner button { background: none; border: none; color: inherit; font-weight: 600; cursor: pointer; font-size: 12px; }
+  .banner.setup { background: var(--accent-soft); color: var(--accent-ink); }
+
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 20px 0; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 6px; text-align: center; }
+  .stat .n { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; font-size: 20px; font-weight: 600; }
+  .stat .l { font-size: 10.5px; color: var(--ink-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .stat.confirmed .n { color: var(--confirmed); }
+  .stat.false .n { color: var(--false); }
+  .stat.mixed .n { color: var(--mixed); }
+  .stat.unverified .n { color: var(--unverified); }
+
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .search {
+    flex: 1 1 160px; background: var(--surface); border: 1px solid var(--border); border-radius: 9px;
+    padding: 9px 12px; color: var(--ink); font-family: inherit; font-size: 14px;
+  }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filt {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; letter-spacing: 0.02em; border: 1px solid var(--border);
+    background: var(--surface); color: var(--ink-muted); padding: 7px 10px; border-radius: 999px; cursor: pointer;
+  }
+  .filt.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .search:focus, .filt:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .log { display: flex; flex-direction: column; gap: 12px; }
+  .entry { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow); }
+  .entry-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+  .pill {
+    display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.05em; text-transform: uppercase; padding: 4px 9px; border-radius: 999px;
+  }
+  .pill.confirmed { background: var(--confirmed-bg); color: var(--confirmed); }
+  .pill.false { background: var(--false-bg); color: var(--false); }
+  .pill.mixed { background: var(--mixed-bg); color: var(--mixed); }
+  .pill.unverified { background: var(--unverified-bg); color: var(--unverified); }
+  .claim { font-family: 'Source Serif 4', serif; font-size: 17.5px; font-weight: 600; margin: 0 0 8px; text-wrap: balance; }
+  .explain { font-size: 14.5px; color: var(--ink-muted); margin: 0 0 10px; }
+  .sources { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+  .sources a { font-size: 13px; color: var(--accent-ink); text-decoration: none; word-break: break-word; }
+  .sources a:hover { text-decoration: underline; }
+  .meta { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--ink-muted); font-family: 'IBM Plex Mono', monospace; }
+  .del { background: none; border: none; color: var(--ink-muted); cursor: pointer; font-size: 12px; font-family: 'IBM Plex Mono', monospace; padding: 2px 4px; }
+  .del:hover { color: var(--false); }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--ink-muted); background: var(--surface); border: 1px dashed var(--border); border-radius: 14px; font-size: 14.5px; }
+
+  .modal-back { position: fixed; inset: 0; background: rgba(10,13,20,0.45); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .modal { background: var(--surface); border-radius: 14px; border: 1px solid var(--border); padding: 24px; width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto; }
+  .modal h3 { font-family: 'Source Serif 4', serif; margin: 0 0 6px; font-size: 19px; }
+  .modal .modal-note { font-size: 13px; color: var(--ink-muted); margin: 0 0 18px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-muted); margin-bottom: 5px; }
+  .field input, .field select, .field textarea {
+    width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 10px; color: var(--ink); font-family: inherit; font-size: 14px;
+  }
+  .field textarea { resize: vertical; min-height: 64px; }
+  .field .hint { font-size: 12px; color: var(--ink-muted); margin-top: 5px; }
+  .field .hint a { color: var(--accent-ink); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+  .btn-ghost { background: none; border: 1px solid var(--border); color: var(--ink-muted); padding: 9px 14px; border-radius: 8px; font-family: inherit; font-size: 13.5px; cursor: pointer; }
+  .btn-primary { background: var(--accent); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-family: inherit; font-weight: 600; font-size: 13.5px; cursor: pointer; }
+  .btn-danger { background: none; border: 1px solid var(--false); color: var(--false); padding: 9px 14px; border-radius: 8px; font-family: inherit; font-size: 13.5px; cursor: pointer; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <div class="eyebrow">Research Log</div>
+      <h1>Verdict Ledger</h1>
+    </div>
+    <button class="icon-btn" id="openSettings" title="Settings" aria-label="Settings">⚙︎</button>
+  </div>
+  <p class="sub">Type or voice-type a claim below — Claude searches the web, verifies it, and logs the verdict here.</p>
+
+  <div class="checkbar">
+    <div class="checkbar-row">
+      <textarea id="claimInput" placeholder="e.g. Honey never spoils" rows="1"></textarea>
+      <button class="checkbtn" id="checkBtn">Check claim</button>
+    </div>
+    <div class="checkbar-hint">Tap the microphone on your keyboard to voice-type, or press <kbd>Enter</kbd> to check.</div>
+    <div class="status" id="status" hidden><span class="spinner"></span><span id="statusText">Searching the web…</span></div>
+    <div class="banner" id="errorBanner" hidden></div>
+  </div>
+
+  <div class="banner setup" id="setupBanner" hidden>
+    No API key saved yet — tap the gear icon above to add your Anthropic API key before checking a claim.
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="toolbar">
+    <input class="search" id="search" type="text" placeholder="Search your ledger…" />
+    <div class="filters" id="filters"></div>
+  </div>
+
+  <div class="log" id="log"></div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-back" id="settingsBack" hidden>
+  <div class="modal">
+    <h3>Settings</h3>
+    <p class="modal-note">Your API key is stored only in this browser, on this device, and is sent directly to Anthropic when you check a claim — it never passes through anywhere else.</p>
+    <div class="field">
+      <label for="f-key">Anthropic API key</label>
+      <input id="f-key" type="password" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+      <div class="hint">Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Each check costs a small amount (roughly a cent or two) billed to your Anthropic account.</div>
+    </div>
+    <div class="field">
+      <label for="f-model">Model</label>
+      <select id="f-model">
+        <option value="claude-sonnet-5">Claude Sonnet 5 — best accuracy (recommended)</option>
+        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 — faster & cheaper</option>
+      </select>
+    </div>
+    <div class="modal-actions" style="justify-content: space-between;">
+      <button class="btn-danger" id="exportBtn" type="button">Export ledger</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-ghost" id="closeSettings" type="button">Close</button>
+        <button class="btn-primary" id="saveSettings" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const LS_ENTRIES = 'verdictLedger.entries';
+  const LS_KEY = 'verdictLedger.apiKey';
+  const LS_MODEL = 'verdictLedger.model';
+
+  const VERDICT_LABEL = { confirmed: 'Confirmed', false: 'False', mixed: 'Mixed', unverified: 'Unverified' };
+
+  let entries = [];
+  let activeFilter = 'all';
+  let searchTerm = '';
+
+  function loadEntries() {
+    try { entries = JSON.parse(localStorage.getItem(LS_ENTRIES) || '[]'); } catch (e) { entries = []; }
+  }
+  function saveEntries() {
+    localStorage.setItem(LS_ENTRIES, JSON.stringify(entries));
+  }
+  function getKey() { return localStorage.getItem(LS_KEY) || ''; }
+  function getModel() { return localStorage.getItem(LS_MODEL) || 'claude-sonnet-5'; }
+
+  function fmtDate(iso) {
+    try { return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); }
+    catch (e) { return ''; }
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderStats() {
+    const counts = { confirmed: 0, false: 0, mixed: 0, unverified: 0 };
+    entries.forEach(e => { if (counts[e.verdict] !== undefined) counts[e.verdict]++; });
+    document.getElementById('stats').innerHTML = `
+      <div class="stat"><div class="n">${entries.length}</div><div class="l">Checked</div></div>
+      <div class="stat confirmed"><div class="n">${counts.confirmed}</div><div class="l">Confirmed</div></div>
+      <div class="stat false"><div class="n">${counts.false}</div><div class="l">False</div></div>
+      <div class="stat mixed"><div class="n">${counts.mixed}</div><div class="l">Mixed</div></div>
+      <div class="stat unverified"><div class="n">${counts.unverified}</div><div class="l">Unverified</div></div>
+    `;
+  }
+
+  function renderFilters() {
+    const opts = [['all','All'],['confirmed','Confirmed'],['false','False'],['mixed','Mixed'],['unverified','Unverified']];
+    const el = document.getElementById('filters');
+    el.innerHTML = opts.map(([k,l]) => `<button class="filt${activeFilter===k?' active':''}" data-f="${k}">${l}</button>`).join('');
+    el.querySelectorAll('.filt').forEach(btn => btn.addEventListener('click', () => { activeFilter = btn.dataset.f; renderFilters(); renderLog(); }));
+  }
+
+  function renderLog() {
+    const el = document.getElementById('log');
+    let list = entries.slice().sort((a,b) => new Date(b.checkedAt) - new Date(a.checkedAt));
+    if (activeFilter !== 'all') list = list.filter(e => e.verdict === activeFilter);
+    if (searchTerm.trim()) {
+      const t = searchTerm.trim().toLowerCase();
+      list = list.filter(e => (e.claim + ' ' + (e.explanation||'')).toLowerCase().includes(t));
+    }
+    if (list.length === 0) {
+      el.innerHTML = `<div class="empty">${entries.length === 0
+        ? 'No claims checked yet. Type one above to get started.'
+        : 'Nothing matches that search or filter.'}</div>`;
+      return;
+    }
+    el.innerHTML = list.map(e => `
+      <div class="entry">
+        <div class="entry-top">
+          <span class="pill ${e.verdict}">${VERDICT_LABEL[e.verdict] || e.verdict}</span>
+          <button class="del" data-id="${e.id}">Remove</button>
+        </div>
+        <p class="claim">${escapeHtml(e.claim)}</p>
+        ${e.explanation ? `<p class="explain">${escapeHtml(e.explanation)}</p>` : ''}
+        ${(e.sources && e.sources.length) ? `<div class="sources">${e.sources.map(s => `<a href="${escapeHtml(s.url)}" target="_blank" rel="noopener">${escapeHtml(s.title || s.url)}</a>`).join('')}</div>` : ''}
+        <div class="meta"><span>${fmtDate(e.checkedAt)}</span><span>${e.checkedBy === 'manual' ? 'Added manually' : 'Verified by Claude'}</span></div>
+      </div>
+    `).join('');
+    el.querySelectorAll('.del').forEach(btn => btn.addEventListener('click', () => {
+      entries = entries.filter(e => e.id !== btn.dataset.id);
+      saveEntries(); renderAll();
+    }));
+  }
+
+  function renderAll() { renderStats(); renderFilters(); renderLog(); }
+  function refreshSetupBanner() { document.getElementById('setupBanner').hidden = !!getKey(); }
+
+  document.getElementById('search').addEventListener('input', e => { searchTerm = e.target.value; renderLog(); });
+
+  // ---- Settings modal ----
+  const settingsBack = document.getElementById('settingsBack');
+  document.getElementById('openSettings').addEventListener('click', () => {
+    document.getElementById('f-key').value = getKey();
+    document.getElementById('f-model').value = getModel();
+    settingsBack.hidden = false;
+  });
+  document.getElementById('closeSettings').addEventListener('click', () => settingsBack.hidden = true);
+  settingsBack.addEventListener('click', e => { if (e.target === settingsBack) settingsBack.hidden = true; });
+  document.getElementById('saveSettings').addEventListener('click', () => {
+    localStorage.setItem(LS_KEY, document.getElementById('f-key').value.trim());
+    localStorage.setItem(LS_MODEL, document.getElementById('f-model').value);
+    settingsBack.hidden = true;
+    refreshSetupBanner();
+  });
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'verdict-ledger-export.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  // ---- Fact-checking via the Anthropic API directly from the browser ----
+  const SYSTEM_PROMPT = `You are a careful fact-checking research assistant embedded in a personal app. You have a web_search tool — use it to find current, credible sources before judging the claim you're given. Cross-check more than one source when the claim is at all contentious.
+
+After researching, respond with ONLY a single JSON object and nothing else — no markdown fences, no commentary before or after it. The object must have exactly these fields:
+{
+  "verdict": "confirmed" | "false" | "mixed" | "unverified",
+  "explanation": "2-4 plain sentences giving the verdict and any important nuance or context",
+  "sources": [ { "title": "...", "url": "..." } ]
+}
+Use "mixed" when the claim is partly true or true-with-caveats. Use "unverified" only when credible sources genuinely could not settle it after searching. List 2-5 of the most relevant real source URLs you found via search.`;
+
+  function extractJson(text) {
+    let t = text.trim();
+    t = t.replace(/^```(?:json)?/i, '').replace(/```$/,'').trim();
+    const start = t.indexOf('{');
+    const end = t.lastIndexOf('}');
+    if (start === -1 || end === -1) return null;
+    try { return JSON.parse(t.slice(start, end + 1)); } catch (e) { return null; }
+  }
+
+  function setStatus(msg) {
+    const s = document.getElementById('status');
+    if (msg) { s.hidden = false; document.getElementById('statusText').textContent = msg; }
+    else { s.hidden = true; }
+  }
+  function showError(msg, isSetup) {
+    const b = document.getElementById('errorBanner');
+    b.hidden = false;
+    b.className = 'banner' + (isSetup ? ' setup' : '');
+    b.innerHTML = `<span>${escapeHtml(msg)}</span><button id="dismissErr">Dismiss</button>`;
+    document.getElementById('dismissErr').addEventListener('click', () => b.hidden = true);
+  }
+  function hideError() { document.getElementById('errorBanner').hidden = true; }
+
+  async function checkClaim() {
+    const input = document.getElementById('claimInput');
+    const claim = input.value.trim();
+    if (!claim) return;
+    const apiKey = getKey();
+    if (!apiKey) { showError('Add your Anthropic API key in Settings (⚙︎) first.', true); return; }
+
+    hideError();
+    const btn = document.getElementById('checkBtn');
+    btn.disabled = true;
+    setStatus('Searching the web…');
+
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: getModel(),
+          max_tokens: 2048,
+          system: SYSTEM_PROMPT,
+          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
+          messages: [{ role: 'user', content: claim }]
+        })
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        const msg = (data && data.error && data.error.message) || `Request failed (${resp.status})`;
+        if (resp.status === 401) showError('That API key was rejected. Check it in Settings.', true);
+        else if (resp.status === 429) showError('Rate limited or out of credit — try again in a moment, or check your Anthropic account balance.');
+        else showError(msg);
+        return;
+      }
+
+      setStatus('Reading the results…');
+
+      const textParts = [];
+      const fallbackSources = [];
+      (data.content || []).forEach(block => {
+        if (block.type === 'text') {
+          textParts.push(block.text);
+          (block.citations || []).forEach(c => { if (c.url) fallbackSources.push({ title: c.title || c.url, url: c.url }); });
+        }
+        if (block.type === 'web_search_tool_result' && Array.isArray(block.content)) {
+          block.content.forEach(r => { if (r.url) fallbackSources.push({ title: r.title || r.url, url: r.url }); });
+        }
+      });
+      const fullText = textParts.join('\n').trim();
+      const parsed = extractJson(fullText);
+
+      let entry;
+      if (parsed && parsed.verdict) {
+        const dedupSources = [];
+        const seen = new Set();
+        (parsed.sources && parsed.sources.length ? parsed.sources : fallbackSources).forEach(s => {
+          if (s.url && !seen.has(s.url)) { seen.add(s.url); dedupSources.push({ title: s.title || s.url, url: s.url }); }
+        });
+        entry = {
+          id: 'e' + Date.now() + Math.random().toString(36).slice(2,7),
+          claim,
+          verdict: ['confirmed','false','mixed','unverified'].includes(parsed.verdict) ? parsed.verdict : 'unverified',
+          explanation: parsed.explanation || '',
+          sources: dedupSources.slice(0, 6),
+          checkedAt: new Date().toISOString(),
+          checkedBy: 'ai'
+        };
+      } else {
+        const seen = new Set();
+        const dedupSources = fallbackSources.filter(s => s.url && !seen.has(s.url) && seen.add(s.url)).slice(0, 6);
+        entry = {
+          id: 'e' + Date.now() + Math.random().toString(36).slice(2,7),
+          claim,
+          verdict: 'unverified',
+          explanation: fullText || 'Claude could not produce a clear verdict for this claim.',
+          sources: dedupSources,
+          checkedAt: new Date().toISOString(),
+          checkedBy: 'ai'
+        };
+      }
+
+      entries.push(entry);
+      saveEntries();
+      input.value = '';
+      renderAll();
+    } catch (e) {
+      showError('Could not reach the API — check your internet connection and try again.');
+    } finally {
+      setStatus(null);
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById('checkBtn').addEventListener('click', checkClaim);
+  document.getElementById('claimInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); checkClaim(); }
+  });
+  document.getElementById('claimInput').addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 140) + 'px';
+  });
+
+  loadEntries();
+  renderAll();
+  refreshSetupBanner();
+</script>
+</body>
+</html>
